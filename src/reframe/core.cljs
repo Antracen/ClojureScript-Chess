@@ -1,9 +1,11 @@
 (ns reframe.core
   (:require [reagent.dom]
             [re-frame.core :as rf]
-            [reframe.chess :as chess]))
+            [reframe.chess :as chess]
+            [websocket-fx.core :as wfx]))
 
 ; ========== STATE ==========
+(def socket-id :default)
 
 (defn initialize-app-state
   []
@@ -25,11 +27,16 @@
          square [(chess/number-to-letter file) rank]]
      (if (nil? square-from)
        (assoc db :square-from square)
-       (let [new-board (chess/move-piece board square-from square)]
+       (let [new-board (chess/move-piece board square-from square)
+             new-history (conj history new-board)]
          (if-not (= board new-board)
-           (assoc db :board new-board
-                  :square-from nil
-                  :history (conj history new-board))
+           (do
+             (rf/dispatch [::wfx/push socket-id {:kind :client-state
+                                                 :board new-board
+                                                 :history new-history}])
+             (assoc db :board new-board
+                    :square-from nil
+                    :history new-history))
            (assoc db :square-from nil)))))))
 
 (rf/reg-event-fx
@@ -44,7 +51,33 @@
    (let [db (:db coeffects) 
          history (:history db)]
      (when-not (= (count history) 1)
-       {:db (-> db (assoc :board (nth history 1)) (assoc :history (rest history)))}))))
+       (do (rf/dispatch [::wfx/push socket-id {:kind :client-state
+                                               :board (nth history 1)
+                                               :history (rest history)}])
+           {:db (-> db (assoc :board (nth history 1)) (assoc :history (rest history)))})))))
+
+(rf/reg-event-fx
+ ::websocket-connected
+ (fn [coeffects _]
+   (let [db (:db coeffects)
+         board (:board db)
+         history (:history db)]
+     (rf/dispatch [::wfx/push socket-id {:kind :client-state
+                                         :board board
+                                         :history history}])
+     (rf/dispatch [::wfx/subscribe socket-id :game-subscription {:message {:kind :subscribe-to-game} 
+                                                                 :on-message [::game-updated]}]))))
+
+(rf/reg-event-fx
+ ::websocket-disconnected
+ (fn [_ _]
+   (println "disconnected")))
+
+(rf/reg-event-fx
+ ::game-updated
+ (fn [coeffects [_ data]]
+   (let [db (:db coeffects)]
+        {:db (assoc db :board (:board data) :history (:history data))})))
 
 ; ========== X ==========
 
@@ -128,3 +161,14 @@
   []
   (rf/dispatch-sync [:initialize])
   (render))
+
+; ========== SOCKETS ==========
+
+(def options
+  {:url "ws://localhost:3000/ws" 
+   :format :edn 
+   :on-connect [::websocket-connected]
+   :on-disconnect [::websocket-disconnected]})
+
+(rf/dispatch [::wfx/connect socket-id options])
+(rf/dispatch [::wfx/disconnect socket-id])
