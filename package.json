@@ -1,6 +1,8 @@
 {
   "name": "reframe",
+  "main": "index.js",
   "scripts": {
+    "start": "node index.js",
     "watch": "npx shadow-cljs watch reframe",
     "release": "npx shadow-cljs release reframe",
     "build-report": "npx shadow-cljs run shadow.cljs.build-report reframe target/build-report.html"
@@ -11,7 +13,8 @@
     "karma-cljs-test": "0.1.0",
     "karma-junit-reporter": "2.0.1",
     "karma-phantomjs-launcher": "1.0.4",
-    "shadow-cljs": "2.15.12"
+    "shadow-cljs": "2.15.12",
+    "express": "^4.15.2"
   },
   "dependencies": {
     "react": "17.0.1",
