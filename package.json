@@ -1,8 +1,12 @@
 {
   "name": "reframe",
-  "main": "./index.js",
+  "version": "0.0.1",
+  "engines": {
+    "node": "16.x"
+  },
+  "main": "index.js",
   "scripts": {
-    "start": "node ./index.js",
+    "start": "node index.js",
     "watch": "npx shadow-cljs watch reframe",
     "release": "npx shadow-cljs release reframe",
     "build-report": "npx shadow-cljs run shadow.cljs.build-report reframe target/build-report.html"
@@ -19,8 +23,5 @@
   "dependencies": {
     "react": "17.0.1",
     "react-dom": "17.0.1"
-  },
-  "engines": {
-    "node": "18.x"
   }
 }
