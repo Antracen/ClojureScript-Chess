@@ -160,7 +160,7 @@
 ; ========== SOCKETS ==========
 
 (def options
-  {:url "ws://chess-server.herokuapp.com/ws"
+  {:url "wss://chess-server.herokuapp.com/ws"
    :format :edn
    :on-connect [::websocket-connected]
    :on-disconnect [::websocket-disconnected]})
