@@ -18,8 +18,8 @@
 
 (rf/reg-event-db :initialize initialize-app-state)
 
-(rf/reg-event-db 
- :square-clicked 
+(rf/reg-event-db
+ :square-clicked
  (fn [db [_ [rank file]]]
    (let [square-from (:square-from db)
          board (:board db)
@@ -48,7 +48,7 @@
 (rf/reg-event-fx
  :undo-move
  (fn [coeffects _]
-   (let [db (:db coeffects) 
+   (let [db (:db coeffects)
          history (:history db)]
      (when-not (= (count history) 1)
        (do (rf/dispatch [::wfx/push socket-id {:kind :client-state
@@ -58,15 +58,10 @@
 
 (rf/reg-event-fx
  ::websocket-connected
- (fn [coeffects _]
-   (let [db (:db coeffects)
-         board (:board db)
-         history (:history db)]
-     (rf/dispatch [::wfx/push socket-id {:kind :client-state
-                                         :board board
-                                         :history history}])
-     (rf/dispatch [::wfx/subscribe socket-id :game-subscription {:message {:kind :subscribe-to-game} 
-                                                                 :on-message [::game-updated]}]))))
+ (fn [_ _]
+   (println "Connected to websocket!")
+     (rf/dispatch [::wfx/subscribe socket-id :game-subscription {:message {:kind :subscribe-to-game}
+                                                                 :on-message [::game-updated]}])))
 
 (rf/reg-event-fx
  ::websocket-disconnected
@@ -77,7 +72,7 @@
  ::game-updated
  (fn [coeffects [_ data]]
    (let [db (:db coeffects)]
-        {:db (assoc db :board (:board data) :history (:history data))})))
+     {:db (assoc db :board (:board data) :history (:history data))})))
 
 ; ========== X ==========
 
@@ -165,8 +160,8 @@
 ; ========== SOCKETS ==========
 
 (def options
-  {:url "wss://chess-server.herokuapp.com:5000/ws" 
-   :format :edn 
+  {:url "ws://chess-server.herokuapp.com/ws"
+   :format :edn
    :on-connect [::websocket-connected]
    :on-disconnect [::websocket-disconnected]})
 
