@@ -6,4 +6,4 @@
  :dev-http {8280 "resources/public"}
  :builds {:reframe {:target :browser
                     :output-dir "resources/public/js"
-                    :modules {:reframe {:init-fn reframe.core/run}}}}}
+                    :modules {:ui {:init-fn client.ui/run}}}}}
