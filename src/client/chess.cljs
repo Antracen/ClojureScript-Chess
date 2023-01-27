@@ -2,7 +2,7 @@
   (:require [clojure.test :refer [deftest is testing]]))
 
 (defn place-pieces
-  "Pieces, as common in chess circles, does not include pawns"
+  "Pieces, as common in chess circles, do not include pawns"
   [board row color]
   (assoc board ["a" row] {:piece :rook
                           :color color}

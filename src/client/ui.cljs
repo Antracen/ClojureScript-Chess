@@ -1,7 +1,7 @@
 (ns client.ui
   (:require [reagent.dom]
             [re-frame.core :as rf]
-            [reframe.chess :as chess]
+            [client.chess :as chess]
             [websocket-fx.core :as wfx]))
 
 ; ========== STATE ==========
