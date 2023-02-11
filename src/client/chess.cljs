@@ -43,7 +43,11 @@
 (defn init-board
   "The initial state of a chess board"
   []
-  (-> {:current-turn :white} (place-pieces 1 :white) (place-pawns 2 :white) (place-pieces 8 :black) (place-pawns 7 :black)))
+  (-> {:current-turn :white} 
+      (place-pieces 1 :white) 
+      (place-pawns 2 :white) 
+      (place-pieces 8 :black) 
+      (place-pawns 7 :black)))
 
 (defn number-to-letter
   [num]
@@ -180,8 +184,21 @@
     ; if false
     :white))
 
+(defn promote-pawn
+  [board [file rank] preferred-promotion]
+  (let [piece (get board [file rank])
+        kind (:piece piece)
+        color (:color piece)
+        last-rank (if (= color :white)
+                    8
+                    1)]
+    (if (and (= :pawn kind)
+             (= last-rank rank))
+      (assoc-in board [[file rank] :piece] preferred-promotion)
+      board)))
+
 (defn execute-move
-  [board from to]
+  [board from to preferred-promotion]
   (-> board 
       (assoc :last-move {:castle false
                          :piece (get board from)
@@ -189,16 +206,18 @@
                          :to to})
       (assoc to (get board from)) 
       (assoc-in [to :has-moved] true) 
-      (dissoc from) 
-      (assoc :current-turn (opposite-color (get board :current-turn)))))
+      (dissoc from)
+      (assoc :current-turn (opposite-color (get board :current-turn)))
+      (promote-pawn to preferred-promotion)))
 
 (defn valid-move?
   [board from to]
   (let [from-piece (get board from)
-        to-piece (get board to)]
+        to-piece (get board to)
+        current-turn (get board :current-turn)]
     (and (not (nil? from-piece))
          (not (= from to))
-         (= (get board :current-turn) (get from-piece :color))
+         (= current-turn (get from-piece :color))
          (not (= (:color from-piece) (:color to-piece)))
          (cond (= (:piece from-piece) :pawn) (valid-pawn-move? board from to (:color from-piece))
                (= (:piece from-piece) :knight) (valid-knight-move? from to)
@@ -241,8 +260,8 @@
          (= file-distance 2)
          (not (king-under-attack? board (:color king)))
          (squares-empty? board (map (fn [file] [file from-rank]) file-range))
-         (not (king-under-attack? (execute-move board [from-file from-rank] intermediate-square) (:color king)))
-         (not (king-under-attack? (execute-move board [from-file from-rank] [to-file to-rank]) (:color king))))))
+         (not (king-under-attack? (execute-move board [from-file from-rank] intermediate-square :queen) (:color king)))
+         (not (king-under-attack? (execute-move board [from-file from-rank] [to-file to-rank] :queen) (:color king))))))
 
 (defn execute-castle
   [board [from-file from-rank] [to-file to-rank]]
@@ -264,7 +283,7 @@
         (assoc [from-file from-rank] nil) 
         (assoc rook-square nil) 
         (assoc-in [[to-file to-rank] :has-moved] true) 
-        (assoc-in [intermediate-square :has-moved] true) 
+        (assoc-in [intermediate-square :has-moved] true)
         (assoc :current-turn (opposite-color (get board :current-turn))))))
 
 (defn execute-en-passant
@@ -281,7 +300,7 @@
                            :to [to-file to-rank]})
         (assoc [to-file to-rank] pawn) 
         (assoc [from-file from-rank] nil) 
-        (assoc [to-file (- to-rank direction)] nil) 
+        (assoc [to-file (- to-rank direction)] nil)
         (assoc :current-turn (opposite-color (get board :current-turn))))))
 
 (defn valid-en-passant?
@@ -313,15 +332,16 @@
   "Move a piece from one square to another.
    Will not validate the move.
    If starting square is empty, nothing happens."
-  [board from to]
+  ([board from to] (move-piece board from to :queen))
+  ([board from to preferred-promotion]
   (if (and (valid-move? board from to)
-           (not (king-under-attack? (execute-move board from to) (:color (get board from)))))
-    (execute-move board from to)
+           (not (king-under-attack? (execute-move board from to preferred-promotion) (:color (get board from)))))
+    (execute-move board from to preferred-promotion)
     (if (valid-castle? board from to)
       (execute-castle board from to)
       (if (valid-en-passant? board from to)
         (execute-en-passant board from to)
-        board))))
+        board)))))
 
 ; ========================== TESTS ==========================
 
@@ -350,8 +370,3 @@
       (is (= board board-after-illegal-move)))
     (testing "Trying to move when there is no piece"
       (is (= board board-after-move-to-self)))))
-
-; TODO
-; Multiplayer:
-;     Websockets
-;     Dynamic creation of rooms. Going to <url>/<made-up-id> should create a game people can join

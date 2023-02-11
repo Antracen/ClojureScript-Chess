@@ -1,3 +1,28 @@
 html * {
     font-family: monospace;
 }
+
+#dark-square, #light-square, #dark-square-selected, #light-square-selected, #dark-square-move, #light-square-move {
+    width: 12.5%;
+    height: 12.5%;
+}
+
+#dark-square {
+    background-color: #8ca2ad;
+}
+
+#light-square {
+    background-color: #dee3e6;
+}
+
+#dark-square-selected, #light-square-selected {
+    background-color: #799c82;
+}
+
+#dark-square-move {
+    background-color: #92b166;
+}
+
+#light-square-move {
+    background-color: #c3d887;
+}
