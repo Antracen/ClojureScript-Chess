@@ -80,7 +80,7 @@
  :change-promotion
  (fn [coeffects [_ piece]]
    (let [db (:db coeffects)]
-     {:db (assoc db :preferred-promotion piece)})))
+     {:db (assoc db :preferred-promotion (keyword piece))})))
 
 (rf/reg-event-fx
  ::websocket-connected
