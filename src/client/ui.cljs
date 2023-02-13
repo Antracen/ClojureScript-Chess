@@ -19,7 +19,7 @@
 ; ========== EVENT HANDLING / STATE UPDATING ==========
 
 (def options
-  {:url "ws://localhost:5000/ws"
+  {:url "wss://chess-server.herokuapp.com/ws"
    :format :edn
    :on-connect [::websocket-connected]
    :on-disconnect [::websocket-disconnected]})
