@@ -2,7 +2,7 @@
   "name": "reframe",
   "version": "0.0.1",
   "engines": {
-    "node": "18.x"
+    "node": "16.x"
   },
   "main": "index.js",
   "scripts": {
