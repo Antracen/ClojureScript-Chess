@@ -13,7 +13,6 @@
   (let [board (chess/init-board)]
     {:board board
      :pov :white
-     :history (list board)
      :preferred-promotion :queen}))
 
 ; ========== EVENT HANDLING / STATE UPDATING ==========
@@ -32,29 +31,25 @@
          [:dispatch [::wfx/disconnect socket-id]]]}))
 
 (defn push-to-server
-  [board history]
+  [board]
   (rf/dispatch [::wfx/push socket-id {:kind :client-state
-                                      :board board
-                                      :history history}]))
+                                      :board board}]))
 
 (rf/reg-event-db
  :square-clicked
  (fn [db [_ [rank file]]]
    (let [square-from (:square-from db)
          board (:board db)
-         history (:history db)
          preferred-promotion (:preferred-promotion db)
          square [(chess/number-to-letter file) rank]]
      (if (nil? square-from)
        (assoc db :square-from square)
-       (let [new-board (chess/move-piece board square-from square preferred-promotion)
-             new-history (conj history new-board)]
+       (let [new-board (chess/move-piece board square-from square preferred-promotion)]
          (if-not (= board new-board)
            (do
-             (push-to-server new-board new-history)
+             (push-to-server new-board)
              (assoc db :board new-board
-                    :square-from nil
-                    :history new-history))
+                    :square-from nil))
            (assoc db :square-from nil)))))))
 
 (rf/reg-event-fx
@@ -65,16 +60,8 @@
 
 (rf/reg-event-fx
  :undo-move
- (fn [coeffects _]
-   (let [db (:db coeffects)
-         history (:history db)]
-     (when-not (= (count history) 1)
-       (rf/dispatch [::wfx/push socket-id {:kind :client-state
-                                               :board (nth history 1)
-                                               :history (rest history)}])
-       {:db (-> db 
-                (assoc :board (nth history 1)) 
-                (assoc :history (rest history)))}))))
+ (fn [_ _]
+   (rf/dispatch [::wfx/push socket-id {:kind :undo-move}])))
 
 (rf/reg-event-fx
  :change-promotion
@@ -84,9 +71,10 @@
 
 (rf/reg-event-fx
  ::websocket-connected
- (fn [_ _]
+ (fn [coeffects _]
    (println "Connected to websocket!")
-   (rf/dispatch [::wfx/subscribe socket-id :game-subscription {:message {:kind :subscribe-to-game}
+   (rf/dispatch [::wfx/subscribe socket-id :game-subscription {:message {:kind :subscribe-to-game
+                                                                         :board (get-in coeffects [:db :board])}
                                                                :on-message [::game-updated]}])))
 
 (rf/reg-event-fx
@@ -99,7 +87,7 @@
  (fn [coeffects [_ data]]
    (println "Got state from server")
    (let [db (:db coeffects)]
-     {:db (assoc db :board (:board data) :history (:history data))})))
+     {:db (assoc db :board data)})))
 
 ; ========== X ==========
 
